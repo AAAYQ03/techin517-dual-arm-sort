@@ -1,0 +1,44 @@
+# Camera configuration for bimanual SOA scenarios.
+# Cameras are always on the follower arms only — never on leaders.
+#
+# Fields:
+#   name:          unique camera identifier (also used as ROS node name)
+#   camera_type:   'usb_camera' or 'realsense2_camera'
+#   param_path:    filename within soa_bringup/config/ for camera capability parameters
+#   attached_to:   ROS node namespace for the camera node
+#
+# USB camera hardware fields:
+#   video_device:  Linux device path (e.g., /dev/video0)
+#   frame_id:      TF frame the camera is physically attached to
+#
+# RealSense camera hardware fields (all optional — auto-discovers if only one is connected):
+#   serial_no:     device serial number (find with: rs-enumerate-devices)
+#   usb_port_id:   USB port ID for stable identification (e.g., "2-1")
+
+cameras:
+  - name: wrist_cam_left
+    camera_type: usb_camera
+    param_path: soa_usb_cam.yaml
+    attached_to: left_follower
+    video_device: /dev/video8
+    frame_id: follower_left_gripper_frame_link
+
+  - name: wrist_cam_right
+    camera_type: usb_camera
+    param_path: soa_usb_cam.yaml
+    attached_to: right_follower
+    video_device: /dev/video6
+    frame_id: follower_right_gripper_frame_link
+
+  - name: overhead_cam
+    camera_type: realsense2_camera
+    param_path: soa_realsense2.yaml
+    attached_to: static_camera
+
+  # Uncomment to add a shared static overhead RealSense camera:
+  # - name: overhead_cam
+  #   camera_type: realsense2_camera
+  #   param_path: soa_realsense2.yaml
+  #   attached_to: static_camera
+  #   # serial_no: ""      # Uncomment to select by serial (use rs-enumerate-devices)
+  #   # usb_port_id: ""    # Uncomment to select by USB port (e.g., "2-1")

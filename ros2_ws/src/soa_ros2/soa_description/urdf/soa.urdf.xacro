@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<robot name="soa" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:arg name="prefix"      default=""/>
+  <xacro:arg name="usb_port"    default="/dev/ttyACM0"/>
+  <xacro:arg name="leader_mode" default="false"/>
+  <xacro:arg name="use_sim"     default="false"/>
+
+  <!-- Calibration args: servo IDs and offsets (defaults match soa_ros2_control.xacro) -->
+  <xacro:arg name="shoulder_pan_id"      default="1"/>
+  <xacro:arg name="shoulder_pan_offset"  default="0"/>
+  <xacro:arg name="shoulder_lift_id"     default="2"/>
+  <xacro:arg name="shoulder_lift_offset" default="0"/>
+  <xacro:arg name="elbow_flex_id"        default="3"/>
+  <xacro:arg name="elbow_flex_offset"    default="0"/>
+  <xacro:arg name="wrist_flex_id"        default="4"/>
+  <xacro:arg name="wrist_flex_offset"    default="0"/>
+  <xacro:arg name="wrist_roll_id"        default="5"/>
+  <xacro:arg name="wrist_roll_offset"    default="0"/>
+  <xacro:arg name="gripper_id"           default="6"/>
+  <xacro:arg name="gripper_offset"       default="0"/>
+
+  <xacro:include filename="$(find soa_description)/urdf/soa_macro.xacro"/>
+  <xacro:include filename="$(find soa_description)/urdf/soa_ros2_control.xacro"/>
+
+  <xacro:soa prefix="$(arg prefix)"/>
+
+  <xacro:soa_ros2_control
+    name="soa_system"
+    prefix="$(arg prefix)"
+    usb_port="$(arg usb_port)"
+    leader_mode="$(arg leader_mode)"
+    use_sim="$(arg use_sim)"
+    shoulder_pan_id="$(arg shoulder_pan_id)"
+    shoulder_pan_offset="$(arg shoulder_pan_offset)"
+    shoulder_lift_id="$(arg shoulder_lift_id)"
+    shoulder_lift_offset="$(arg shoulder_lift_offset)"
+    elbow_flex_id="$(arg elbow_flex_id)"
+    elbow_flex_offset="$(arg elbow_flex_offset)"
+    wrist_flex_id="$(arg wrist_flex_id)"
+    wrist_flex_offset="$(arg wrist_flex_offset)"
+    wrist_roll_id="$(arg wrist_roll_id)"
+    wrist_roll_offset="$(arg wrist_roll_offset)"
+    gripper_id="$(arg gripper_id)"
+    gripper_offset="$(arg gripper_offset)"/>
+
+</robot>

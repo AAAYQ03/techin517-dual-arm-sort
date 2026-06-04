@@ -1,0 +1,3 @@
+[submodule "feetech_ros2_driver"]
+	path = feetech_ros2_driver
+	url = https://github.com/JafarAbdi/feetech_ros2_driver.git

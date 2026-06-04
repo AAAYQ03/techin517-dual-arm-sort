@@ -1,0 +1,4 @@
+string controller_type   # 'jtc' or 'forward'
+---
+bool success
+string current_controller

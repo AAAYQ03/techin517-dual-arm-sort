@@ -1,0 +1,14 @@
+# Camera configuration for single-arm SOA scenarios.
+cameras:
+  - name: wrist_cam
+    camera_type: usb_camera
+    param_path: soa_usb_cam.yaml
+    attached_to: follower
+    video_device: /dev/v4l/by-path/pci-0000:0e:00.0-usb-0:1.1:1.0-video-index0
+    frame_id: follower_gripper_frame_link
+
+  - name: overhead_cam
+    camera_type: realsense2_camera
+    param_path: soa_realsense2.yaml
+    attached_to: static_camera
+    serial_no: "243222072732"

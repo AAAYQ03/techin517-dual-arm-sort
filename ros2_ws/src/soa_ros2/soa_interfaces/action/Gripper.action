@@ -1,0 +1,9 @@
+# Goal: target gripper joint position (open ~1.7453, closed ~-0.1745)
+float64 target_position
+---
+# Result
+bool success
+string message
+---
+# Feedback
+float64 current_position

@@ -1,0 +1,37 @@
+# Controller config for soa_moveit_bringup (global namespace, no /follower prefix).
+# Mirrors soa_description/config/follower_controllers.yaml but without the /follower:
+# namespace wrapper so that MoveIt's default action client paths
+# (/arm_controller/follow_joint_trajectory, /gripper_controller/gripper_cmd)
+# match the server paths directly.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 50
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: position_controllers/GripperActionController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - shoulder_pan
+      - shoulder_lift
+      - elbow_flex
+      - wrist_flex
+      - wrist_roll
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+
+gripper_controller:
+  ros__parameters:
+    joint: gripper
+    allow_stalling: true

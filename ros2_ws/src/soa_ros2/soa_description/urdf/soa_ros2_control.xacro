@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<!--
+  SOA ros2_control Configuration
+
+  This macro defines the ros2_control hardware interface for the SOA arm.
+  Uses feetech_ros2_driver for real hardware with Feetech STS3215 servos.
+
+  Parameters:
+    - name: Name of the ros2_control instance (e.g., "soa_controller")
+    - prefix: String prepended to all joint names (must match arm macro prefix)
+    - use_sim: Boolean - true for Gazebo simulation, false for real hardware (default: false)
+    - usb_port: USB serial port for real hardware (e.g., "/dev/ttyACM0")
+    - leader_mode: Boolean - true for read-only (no commands), false for writable (default: false)
+    - {joint}_id: Servo ID for each joint (defaults: 1-6)
+    - {joint}_offset: Homing offset for each joint from calibration (defaults: 0)
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="soa">
+
+  <xacro:macro name="soa_ros2_control" params="name prefix use_sim:=false usb_port:=/dev/ttyACM0 leader_mode:=false
+                                             shoulder_pan_id:=1 shoulder_pan_offset:=0
+                                             shoulder_lift_id:=2 shoulder_lift_offset:=0
+                                             elbow_flex_id:=3 elbow_flex_offset:=0
+                                             wrist_flex_id:=4 wrist_flex_offset:=0
+                                             wrist_roll_id:=5 wrist_roll_offset:=0
+                                             gripper_id:=6 gripper_offset:=0">
+
+    <ros2_control name="${name}" type="system">
+
+      <hardware>
+        <!-- Hardware Plugin Selection -->
+        <xacro:if value="${use_sim}">
+          <!-- Gazebo Simulation -->
+          <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </xacro:if>
+
+        <xacro:unless value="${use_sim}">
+          <!-- Real Hardware (Feetech STS3215 servos via USB serial) -->
+          <plugin>feetech_ros2_driver/FeetechHardwareInterface</plugin>
+          <param name="usb_port">${usb_port}</param>
+        </xacro:unless>
+      </hardware>
+
+      <!-- Joint Interfaces -->
+      <!-- All joints have position command interface and position/velocity state interfaces -->
+
+      <joint name="${prefix}shoulder_pan">
+        <param name="id">${shoulder_pan_id}</param>
+        <param name="offset">${shoulder_pan_offset}</param>
+        <param name="p_cofficient">8</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${prefix}shoulder_lift">
+        <param name="id">${shoulder_lift_id}</param>
+        <param name="offset">${shoulder_lift_offset}</param>
+        <param name="p_cofficient">16</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <!-- L-shaped home pose: 90° forward -->
+          <param name="initial_value">1.5708</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${prefix}elbow_flex">
+        <param name="id">${elbow_flex_id}</param>
+        <param name="offset">${elbow_flex_offset}</param>
+        <param name="p_cofficient">16</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <!-- L-shaped home pose: -90° (bent upward) -->
+          <param name="initial_value">-1.5708</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${prefix}wrist_flex">
+        <param name="id">${wrist_flex_id}</param>
+        <param name="offset">${wrist_flex_offset}</param>
+        <param name="p_cofficient">16</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${prefix}wrist_roll">
+        <param name="id">${wrist_roll_id}</param>
+        <param name="offset">${wrist_roll_offset}</param>
+        <param name="p_cofficient">16</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <joint name="${prefix}gripper">
+        <param name="id">${gripper_id}</param>
+        <param name="offset">${gripper_offset}</param>
+        <param name="p_cofficient">16</param>
+        <xacro:unless value="${leader_mode}">
+          <command_interface name="position"/>
+        </xacro:unless>
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity"/>
+      </joint>
+
+    </ros2_control>
+
+  </xacro:macro>
+
+</robot>

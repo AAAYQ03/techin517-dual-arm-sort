@@ -1,0 +1,15 @@
+# SOA single-arm hardware parameters
+# Single source of truth for ports, robot IDs, and calibration directories.
+# Calibration files live at: {calibration_dir}/{id}.json
+
+/**:
+  ros__parameters:
+    follower:
+      id: "follower8"
+      usb_port: "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AB0181426-if00"
+      calibration_dir: "/home/ubuntu/techin517/huggingface/lerobot/calibration/robots/so101_follower"
+
+    leader:
+      id: "leader8"
+      usb_port: "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AB0183407-if00"
+      calibration_dir: "/home/ubuntu/techin517/huggingface/lerobot/calibration/teleoperators/so101_leader"

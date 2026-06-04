@@ -1,0 +1,15 @@
+/leader:
+  controller_manager:
+    ros__parameters:
+      update_rate: 50  # Hz
+
+      joint_state_broadcaster:
+        type: joint_state_broadcaster/JointStateBroadcaster
+
+  joint_state_broadcaster:
+    ros__parameters:
+      interfaces:
+        - position
+      # No joints: key → auto-discovers all joints from the hardware interface.
+      # This works for both single arm (shoulder_pan, etc.) and bimanual
+      # leader (left_shoulder_pan, right_shoulder_pan, etc.).

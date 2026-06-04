@@ -1,0 +1,59 @@
+/follower:
+  controller_manager:
+    ros__parameters:
+      update_rate: 50  # Hz
+
+      arm_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
+
+      gripper_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
+
+      arm_fwd_controller:
+        type: forward_command_controller/ForwardCommandController
+
+      gripper_fwd_controller:
+        type: forward_command_controller/ForwardCommandController
+
+      joint_state_broadcaster:
+        type: joint_state_broadcaster/JointStateBroadcaster
+
+  arm_controller:
+    ros__parameters:
+      joints:
+        - shoulder_pan
+        - shoulder_lift
+        - elbow_flex
+        - wrist_flex
+        - wrist_roll
+      command_interfaces:
+        - position
+      state_interfaces:
+        - position
+        - velocity
+
+  gripper_controller:
+    ros__parameters:
+      joints:
+        - gripper
+      command_interfaces:
+        - position
+      state_interfaces:
+        - position
+        - velocity
+
+  arm_fwd_controller:
+    ros__parameters:
+      joints:
+        - shoulder_pan
+        - shoulder_lift
+        - elbow_flex
+        - wrist_flex
+        - wrist_roll
+      interface_name: position
+
+  gripper_fwd_controller:
+    ros__parameters:
+      joints:
+        - gripper
+      interface_name: position

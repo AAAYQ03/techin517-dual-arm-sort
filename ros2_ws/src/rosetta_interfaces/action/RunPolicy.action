@@ -1,0 +1,11 @@
+# Goal
+string prompt                    # Task description for policy execution
+---
+# Result
+bool success                     # Whether policy execution completed successfully
+string message                   # Error details or success info
+---
+# Feedback
+uint32 published_actions         # Total actions published so far
+uint32 queue_depth               # Current action queue depth
+string status                    # Current state: "executing", etc.

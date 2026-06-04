@@ -1,0 +1,9 @@
+# Goal: lift the cube to this height (m) above its position when the action started
+float64 goal_height
+---
+# Result
+bool success
+float64 time_taken
+---
+# Feedback (50 Hz)
+float64 distance_to_goal

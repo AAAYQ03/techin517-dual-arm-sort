@@ -1,0 +1,47 @@
+lift_object_server:
+  ros__parameters:
+    # Set by the launch file to the package-share path; left empty here so the
+    # launch arg can override.
+    model_path: ""
+    device: "cuda"
+
+    # Inference / control
+    inference_rate_hz: 50.0          # sim dt 0.01 x decimation 2
+    goal_tolerance_m: 0.01           # spec: succeed when within 1 cm
+    max_action_duration_s: 8.0
+    # EMA smoothing of the arm action targets. The trained policy emits
+    # aggressive open-loop reaches at reset; with action_alpha=1.0 the first
+    # tick commands joints to/past their limits and the Feetech servos whip the
+    # arm. action_alpha=0.2 plus the zero-seeded EMA in lift_object_server.py
+    # bounds the first commanded delta to alpha * 0.5 * raw rather than 0.5 *
+    # raw. Tune upward (0.3-0.5) once the arm tracks smoothly.
+    action_alpha: 0.2
+
+    # Cube tf staleness handling
+    cube_lost_timeout_s: 1.5         # abort after this long with no fresh cube tf
+    cube_tf_max_age_s: 0.5           # age above which feedback reports +inf
+
+    # Joint state freshness
+    joint_state_age_threshold_ms: 100.0
+    use_finite_difference_vel: false
+
+    # Goal acceptance gate (arm joints only). Set to <= 0 to disable, or to a
+    # positive radian threshold to require the arm be near the BASIC v1 default
+    # before accepting a goal. Disabled by default so the policy runs no matter
+    # where the arm starts.
+    pre_action_pose_tolerance_rad: -1.0
+
+    # History flatten convention. Default oldest-first matches IsaacLab
+    # CircularBuffer flatten semantics. Flip if test_history_oldest_first
+    # fails on the deployed model.
+    history_newest_first: true
+
+    # Topic / frame remap
+    joint_states_topic: "/follower/joint_states"
+    arm_command_topic: "/follower/arm_fwd_controller/commands"
+    gripper_command_topic: "/follower/gripper_fwd_controller/commands"
+    robot_description_topic: "/follower/robot_description"
+    base_frame: "follower/base_link"
+    ee_frame: "follower/gripper_frame_link"
+    cube_frame: "aruco_cube"
+    robot_description_timeout_s: 5.0

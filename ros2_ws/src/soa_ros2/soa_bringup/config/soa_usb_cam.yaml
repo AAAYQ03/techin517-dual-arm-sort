@@ -1,0 +1,26 @@
+# Shared USB camera capability parameters for SOA robot arms.
+#
+# These are shared defaults applied to all usb_cam nodes.
+# Hardware-specific settings (video_device, frame_id) are defined per-camera
+# in soa_cameras.yaml / bi_soa_cameras.yaml and passed as overrides by cameras.launch.py.
+
+/**:
+  ros__parameters:
+    framerate: 30.0
+    io_method: "mmap"
+    pixel_format: "mjpeg2rgb"
+    av_device_format: "YUV422P"
+    image_width: 640
+    image_height: 480
+    brightness: -1          # -1 = auto
+    contrast: -1            # -1 = auto
+    saturation: -1          # -1 = auto
+    sharpness: -1           # -1 = auto
+    gain: -1                # -1 = auto
+    auto_white_balance: true
+    white_balance: 4000
+    autoexposure: true
+    exposure: 100
+    autofocus: false
+    focus: -1               # -1 = auto
+    camera_info_url: ""     # Optional: path to camera calibration file

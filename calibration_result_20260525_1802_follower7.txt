@@ -1,0 +1,9 @@
+=== Hand-eye Calibration Result (eye-on-base) ===
+Date: 2026-05-25 follower7 (right arm, new physical position)
+Method: ros2_handeye_calibration + aruco_cube
+Tracking frame: camera_color_optical_frame
+Robot base frame: follower/base_link
+Samples: ~25
+T_base_link → camera_color_optical_frame:
+  translation: [0.0292, 0.1706, 0.3337]
+  rotation (xyzw): [0.6789, -0.6291, 0.2553, -0.2796]

@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="stand">
+    <material name="stand_yellow">
+      <color rgba="1.0 1.0 0.0 1.0"/>
+    </material>
+
+    <link name="stand_link">
+
+      <!-- Visual geometry -->
+
+      <!-- 1: Base plate -->
+      <visual>
+        <origin xyz="0 0 0.0063" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.122 0.384 0.0126"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- 2: Center block -->
+      <visual>
+        <origin xyz="-0.014 0 0.0451" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.150 0.120 0.065"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- 3: -Y arm mount cylinder -->
+      <visual>
+        <origin xyz="0 -0.13575 0.0187" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.055" length="0.0122"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- 4: +Y arm mount cylinder -->
+      <visual>
+        <origin xyz="0 0.13575 0.0187" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.055" length="0.0122"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- 5: Vertical post -->
+      <visual>
+        <origin xyz="0.002 0 0.1971" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.084 0.0645 0.239"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- 6: Top cap cylinder -->
+      <visual>
+        <origin xyz="0.002 0 0.3566" rpy="1.5708 0 0"/>
+        <geometry>
+          <cylinder radius="0.06" length="0.09"/>
+        </geometry>
+        <material name="stand_yellow"/>
+      </visual>
+
+      <!-- Collision geometry (mirrors visual) -->
+
+      <!-- 1: Base plate -->
+      <collision>
+        <origin xyz="0 0 0.0063" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.122 0.384 0.0126"/>
+        </geometry>
+      </collision>
+
+      <!-- 2: Center block -->
+      <collision>
+        <origin xyz="-0.014 0 0.0451" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.150 0.120 0.065"/>
+        </geometry>
+      </collision>
+
+      <!-- 3: -Y arm mount cylinder -->
+      <collision>
+        <origin xyz="0 -0.13575 0.0126" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.055" length="0.0122"/>
+        </geometry>
+      </collision>
+
+      <!-- 4: +Y arm mount cylinder -->
+      <collision>
+        <origin xyz="0 0.13575 0.0126" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.055" length="0.0122"/>
+        </geometry>
+      </collision>
+
+      <!-- 5: Vertical post -->
+      <collision>
+        <origin xyz="0.002 0 0.1971" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.084 0.0645 0.239"/>
+        </geometry>
+      </collision>
+
+      <!-- 6: Top cap cylinder -->
+      <collision>
+        <origin xyz="0.002 -0.03225 0.3566" rpy="0 0 1.5708"/>
+        <geometry>
+          <cylinder radius="0.040" length="0.065"/>
+        </geometry>
+      </collision>
+
+    </link>
+  </xacro:macro>
+
+</robot>

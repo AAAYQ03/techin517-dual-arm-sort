@@ -1,0 +1,76 @@
+robot_type: soa
+
+fps: 30 # change if you used a different fps for training
+max_duration_s: 10.0 # TODO: set the time limit to fit your task
+
+observations:
+  # Wrist USB cam -> model's observation.images.front
+  - key: observation.images.front
+    topic: # TODO: the compressed topic of the wrist camera
+           # hint: use ros2 topic list
+    type: # TODO: the message type of the above topic
+          # hint: use ros2 topic info
+    image:
+      resize: # TODO: the resolution you used to train with
+    align: {strategy: hold, stamp: header}
+    qos: {reliability: best_effort, history: keep_last, depth: 10}
+
+  # Overhead RealSense -> model's observation.images.side
+  - key: observation.images.side # use the key you used to train
+    topic: # TODO: the compressed topic of the depth camera rgb image
+    type: # TODO: the message type of the topic above
+    image:
+      resize: # TODO: the resolution you used to train with
+    align: {strategy: hold, stamp: header}
+    qos: {reliability: best_effort, history: keep_last, depth: 10}
+
+  # Joint states: 6 joints from follower arm
+  # Order MUST match training data index order
+  # rad2deg: ROS radians -> model degrees
+  - key: observation.state
+    topic: # TODO: the topic of the joint states
+    type: # TODO: the message type of the topic above
+    selector:
+      names:
+        - position.shoulder_pan
+        - position.shoulder_lift
+        - position.elbow_flex
+        - position.wrist_flex
+        - position.wrist_roll
+        - position.gripper
+    align: {strategy: hold, stamp: header}
+    qos: {reliability: best_effort, history: keep_last, depth: 50}
+    unit_conversion: rad2deg
+
+actions:
+  # Arm ForwardCommandController: 5 arm joints -> Float64MultiArray
+  # rad2deg on actions applies INVERSE (deg->rad) before publishing
+  - key: action
+    publish:
+      topic: # TODO: the topic to send arm joint commands to
+      type: # TODO: the message type of the topic above
+      qos: {reliability: reliable, history: keep_last, depth: 10}
+    selector:
+      names:
+        - position.shoulder_pan
+        - position.shoulder_lift
+        - position.elbow_flex
+        - position.wrist_flex
+        - position.wrist_roll
+    unit_conversion: rad2deg
+    safety_behavior: hold
+
+  # Gripper ForwardCommandController: 1 gripper joint -> Float64MultiArray
+  - key: action
+    publish:
+      topic: # TODO: the topic to send gripper commands to
+      type: # TODO: the message type of the topic above
+      qos: {reliability: reliable, history: keep_last, depth: 10}
+    selector:
+      names:
+        - position.gripper
+    unit_conversion: rad2deg
+    safety_behavior: hold
+
+recording:
+  storage: mcap

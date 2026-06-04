@@ -1,0 +1,10 @@
+# Goal: target joint positions for the arm
+float64[] joint_positions
+string[] joint_names   # if empty, defaults to all 5 arm joints in order
+---
+# Result
+bool success
+string message
+---
+# Feedback
+float64 max_joint_error   # max abs difference (rad) between current and target joint positions
