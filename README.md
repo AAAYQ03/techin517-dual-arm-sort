@@ -7,7 +7,7 @@ Dual-arm SO-101 LeRobot tabletop sorting system. Two arms cooperatively detect, 
 
 ## Demo
 
-[TODO: video link]
+https://drive.google.com/drive/folders/1MmgWqGXMlzgtbEJmrmab4bkgX5aSRzkh?usp=sharing
 
 ## Project Overview
 
