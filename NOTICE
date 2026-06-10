@@ -1,0 +1,46 @@
+Bi-Arm SO-101 Tabletop Sorting
+Copyright 2026 Youqian Cui, Emmanuel Makinde
+
+This product is licensed under the Apache License, Version 2.0
+(see the LICENSE file for the full license text).
+
+==============================================================
+Third-party software incorporated in this work:
+==============================================================
+
+This project depends on and incorporates code from the following
+open-source projects, each under their respective licenses:
+
+- LeRobot
+  License: Apache License 2.0
+  https://github.com/huggingface/lerobot
+
+- Transformers (used for Grounding DINO and CLIP integration)
+  License: Apache License 2.0
+  https://github.com/huggingface/transformers
+
+- Grounding DINO
+  License: Apache License 2.0
+  https://github.com/IDEA-Research/GroundingDINO
+
+- CLIP (OpenAI)
+  License: MIT License
+  https://github.com/openai/CLIP
+
+- lerobot-kinematics (5-DOF specific IK for SO-101)
+  License: MIT License
+  https://github.com/box2ai-robotics/lerobot-kinematics
+
+- PyTorch
+  License: BSD-style
+  https://github.com/pytorch/pytorch
+
+- OpenCV
+  License: Apache License 2.0
+  https://github.com/opencv/opencv
+
+- Intel RealSense SDK
+  License: Apache License 2.0
+  https://github.com/IntelRealSense/librealsense
+
+See the linked repositories for their full license texts.
