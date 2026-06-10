@@ -36,7 +36,7 @@ from clip_classifier import ClipClassifier
 from lerobot_kinematics import lerobot_IK, get_robot
 
 
-# ============ 配置 ============
+# ============ Configuration ============
 FOLLOWER_PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AE6057204-if00"
 FOLLOWER_ID   = "gix-follower7"
 WRIST_DEV     = "/dev/v4l/by-path/pci-0000:0e:00.0-usb-0:1.1:1.0-video-index0"
@@ -63,11 +63,11 @@ SAFE_HOME_RAD = {
 GRIPPER_OPEN   = 1.7
 GRIPPER_CLOSED = 0.7
 
-# === f7 盒子坐标 ===
-BOX_SAME_F7  = (0.155, -0.058, 0.10)   # f7 自侧右盒 (stationery: pen, glue)
-BOX_CROSS_F7 = (0.195, -0.180, 0.12)   # f7 跨侧左盒 (electronics: battery, earbuds)
+# === f7 bin coordinates ===
+BOX_SAME_F7  = (0.155, -0.058, 0.10)   # f7 same-side (right) bin (stationery: pen, glue)
+BOX_CROSS_F7 = (0.195, -0.180, 0.12)   # f7 cross-side (left) bin (electronics: battery, earbuds)
 
-# === 全部物品配置 (3 个; f7 不抓 earbuds 同侧, 但保留 cross 用) ===
+# === All item configurations (3 items; f7 does not pick earbuds on same side, but kept for cross use) ===
 ALL_ITEMS = {
     "pen": {
         "name": "pen",
@@ -99,18 +99,19 @@ ALL_ITEMS = {
 }
 
 def get_box_for_item(item_cfg):
-    """f7: stationery → 同侧右盒, electronics → 跨侧左盒"""
+    """f7: stationery → same-side (right) bin, electronics → cross-side (left) bin."""
     if item_cfg["category"] == "stationery":
         return BOX_SAME_F7
     else:
         return BOX_CROSS_F7
 
-# 兼容旧 ITEMS 引用
+# Legacy ITEMS alias for backward compatibility
 ITEMS = list(ALL_ITEMS.values())
 
-# === 工作空间过滤 (滤掉机械臂误识别) ===
+# === Workspace filter (rejects spurious detections of the arm itself) ===
 def is_valid_position(base_xyz):
-    """物体必须在合理工作空间内 (桌面物体), 否则可能是机械臂误识别"""
+    """An object must lie within the table-top workspace; otherwise the
+    detection is likely a spurious match on the arm body itself."""
     x, y, z = base_xyz
     return (0.18 < x < 0.30) and (abs(y) < 0.12) and (-0.025 < z < 0.06)
 
@@ -325,15 +326,16 @@ def go_to_safe_home(follower):
 
 
 def redetect_single_item(top, processor_cv, model_cv, item_cfg):
-    """单 item 重新 detect, 用于抓下一个物品前 (避免多物品干扰)"""
+    """Re-detect a single item before grasping the next object (avoids
+    interference from other objects)."""
     print(f"  [Re-detect] {item_cfg['name']}...")
     bgr, depth_raw, intrin = top.read()
-    # 保存 top image debug 图
+    # Save top image as debug image
     import cv2 as _cv2
     import time as _t
     debug_path = f"/home/ubuntu/techin517/debug_redetect_{int(_t.time())}.png"
     _cv2.imwrite(debug_path, bgr)
-    print(f"    [DEBUG] redetect top 图: {debug_path}")
+    print(f"    [DEBUG] redetect top image: {debug_path}")
 
     dets = detect_objects(
         color_image=bgr, depth_image=depth_raw, intrin=intrin,
@@ -364,7 +366,7 @@ def redetect_single_item(top, processor_cv, model_cv, item_cfg):
         d['yaw_rad'] = yaw_rad
         # ===== /v2 =====
         print(f"    [Re-detect ACCEPT] score={d.get('score',0):.2f} base_xyz={base_xyz}")
-        return d  # 返回第一个有效
+        return d  # Return the first valid detection
 
     print(f"    [Re-detect FAIL] no valid {item_cfg['name']} found")
     return None
@@ -372,9 +374,11 @@ def redetect_single_item(top, processor_cv, model_cv, item_cfg):
 
 
 def color_prior_pass(bgr, bbox, item_name):
-    """颜色硬约束: battery 不能太绿 (拒绝绿色饮料盒等干扰).
-       earbuds 必须有足够白色比例 (避免黄色机械臂误识别).
-       其他物品不做颜色检查."""
+    """Hard color constraint:
+       - Battery must not be predominantly green (rejects green distractors).
+       - Earbuds case must contain a sufficient white-pixel fraction (avoids
+         mis-detection on the yellow arm body).
+       Other items skip the color check."""
     import cv2 as _cv2
     import numpy as _np
     x1, y1, x2, y2 = [int(v) for v in bbox]
@@ -393,10 +397,11 @@ def color_prior_pass(bgr, bbox, item_name):
 
 
 def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=None):
-    """每个 item 单独跑 DINO prompt (不用 CLIP), 工作区过滤 + 去重 + 排序"""
+    """Run a separate DINO prompt for each item (CLIP not used here),
+    then apply workspace filtering, deduplication, and sorting."""
     print("\n  Snapshot from D435i...")
     bgr, depth_raw, intrin = top.read()
-    debug_bgr = bgr.copy()  # 保存 raw 图
+    debug_bgr = bgr.copy()  # Save raw image
 
     if items_to_detect is None:
         items_to_detect = list(ALL_ITEMS.keys())
@@ -411,7 +416,7 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
             text_prompt=item_cfg['dino_prompt'],
             target_classes=item_cfg['dino_targets'],
             box_threshold=item_cfg.get('score_threshold', BOX_THRESHOLD), device=DEVICE)
-        # DEBUG: 打印 raw DINO 检测结果 + 在图上画框
+        # DEBUG: print raw DINO detection results + draw boxes on the image
         import cv2 as _cv2
         if len(dets) > 0:
             print(f"    [DEBUG] DINO raw {len(dets)} detection(s):")
@@ -420,7 +425,7 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
                 bbox = d.get('bbox_xyxy', None)
                 if bbox is not None:
                     x1, y1, x2, y2 = [int(v) for v in bbox]
-                    # 不同 item 用不同颜色
+                    # Different color for different items
                     color_map = {"pen": (0,255,255), "glue": (255,200,0), "battery": (0,0,255), "earbuds": (255,0,255)}
                     color = color_map.get(item_name, (200,200,200))
                     _cv2.rectangle(debug_bgr, (x1,y1), (x2,y2), color, 2)
@@ -432,7 +437,7 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
         print(f"    found {len(valid)} candidate(s) after filters")
 
         for d in valid:
-            # 颜色 prior 过滤 (battery 拒绝绿色; earbuds 需要足够白色)
+            # Color-prior filter (battery rejects green; earbuds requires sufficient white)
             cp_pass, cp_reason = color_prior_pass(bgr, d['bbox_xyxy'], item_name)
             if not cp_pass:
                 print(f"    [SKIP] color_prior fail ({cp_reason}): score={d['score']:.2f}")
@@ -454,17 +459,17 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
             print(f"    [ACCEPT] {item_cfg['name']} bbox={bb} score={d['score']:.2f} base_xyz={base_xyz}")
             all_detections.append(d)
 
-    # 保存 debug 图
+    # Save debug image
     import time as _time
     import cv2 as _cv2
     debug_path = f"/home/ubuntu/techin517/debug_detect_{int(_time.time())}.png"
     _cv2.imwrite(debug_path, debug_bgr)
-    print(f"\n  [DEBUG] 检测可视化图: {debug_path}")
+    print(f"\n  [DEBUG] detection visualization image: {debug_path}")
 
     if not all_detections:
         return []
 
-    # bbox 去重
+    # Deduplicate bboxes
     def bbox_center(d):
         x1, y1, x2, y2 = d['bbox_xyxy']
         return ((x1+x2)/2, (y1+y2)/2)
@@ -473,7 +478,7 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
     for d in sorted_dets:
         cx, cy = bbox_center(d)
         item_name = d['item_config']['name']
-        # 只跟同类别物品去重 (不同类别 bbox 接近不该合并)
+        # Only dedup against same-class items (close bboxes of different classes should not be merged)
         same_class_kept = [k for k in deduped if k['item_config']['name'] == item_name]
         if not any((cx-bbox_center(k)[0])**2 + (cy-bbox_center(k)[1])**2 < 200**2 for k in same_class_kept):
             deduped.append(d)
@@ -485,7 +490,7 @@ def main():
     import argparse
     ap = argparse.ArgumentParser(description="Universal f7 dispatch")
     ap.add_argument("items", nargs="+", choices=list(ALL_ITEMS.keys()),
-                    help="物品列表 (例: pen glue, 或 earbuds glue)")
+                    help="Item list (e.g. 'pen glue', or 'earbuds glue')")
     args = ap.parse_args()
     items_to_detect = args.items
 
@@ -518,15 +523,16 @@ def main():
     print(f"  ✓ {len(policies)} ACT models loaded")
 
     try:
-        clip_clf = None  # 不用 CLIP, 每个 item 单独 prompt
+        clip_clf = None  # CLIP not used; one prompt per item
 
         print("\n=== safe_home ===")
         go_to_safe_home(follower)
 
         print("\n=== CV detect all objects ===")
         targets = detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect)
-        # 按 base_xyz[0] 降序: 远的物体先抓 (避免前方 gripper 抓近物时撞远物)
-        # pen 优先, battery 次优先 (避免胶棒干扰), 其他按 x 降序
+        # Sort by descending base_xyz[0]: pick far objects first
+        # (avoids the gripper colliding with far objects while picking near ones).
+        # pen first, battery second (avoids glue interference), others by descending x.
         def _sort_key(d):
             name = d['item_config']['name']
             if name == 'pen':
@@ -547,12 +553,12 @@ def main():
             item = det['item_config']
             act_bundle = policies[item['act_checkpoint']]
 
-            # 抓之前重新 detect 该 item (避免多物品干扰)
-            # 第 1 个用初始 detect 结果, 后续重新 detect
+            # Re-detect this item just before grasping (avoids interference from other objects).
+            # For the first item use the initial detection result; for subsequent items re-detect.
             if idx > 0:
                 new_det = redetect_single_item(top, processor_cv, model_cv, item)
                 if new_det is None:
-                    print(f"  [SKIP] re-detect 失败, 跳过 {item['name']}")
+                    print(f"  [SKIP] re-detect failed, skipping {item['name']}")
                     continue
                 base_xyz = new_det['base_xyz']
                 yaw_rad  = new_det.get('yaw_rad')   # v2 NEW
@@ -584,7 +590,7 @@ def main():
             print(f"\n  ACT ({ACT_DURATION_S}s, task='{item['task_name']}')")
             run_act(follower, top, wrist, act_bundle, item['task_name'], ACT_DURATION_S)
 
-            box_xyz = _redet_box_xyz  # 用 redetect 结果 (或第 1 个的初始结果)
+            box_xyz = _redet_box_xyz  # Use re-detect result (or initial result for the first item)
             print(f"\n  Send to box {box_xyz}")
             obs = follower.get_observation()
             current_gripper = obs.get("gripper.pos", math.degrees(GRIPPER_CLOSED))
