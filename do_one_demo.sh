@@ -1,6 +1,6 @@
 #!/bin/bash
-# do_one_demo.sh - 单条 demo (leader_to_follower + 10s + lerobot-record)
-# 自动判断 resume / 自动清残骸
+# do_one_demo.sh - Single demo (leader_to_follower + 10s + lerobot-record)
+# Automatically detects resume / Automatically cleans up leftovers
 
 ITEM=${1:-battery}
 REPO_ID="ycui77/so101_${ITEM}_f8"
@@ -20,30 +20,30 @@ fi
 
 echo ""
 echo "============================================================"
-echo ">>> [Step 2/3] 4 秒倒计时 (扶 leader 防重力掉)"
+echo ">>> [Step 2/3] 4-second countdown (support the leader to prevent falling due to gravity)"
 echo "============================================================"
 for i in $(seq 4 -1 1); do
-    printf "\r>>> 录制将在 %2d 秒后启动... " $i
+    printf "\r>>> Recording will start in %2d seconds.... " $i
     sleep 1
 done
-printf "\n>>> 启动 lerobot-record!\n\n"
+printf "\n>>> Launching lerobot-record!\n\n"
 
-# 判断 resume 模式
+# Determine resume mode
 if [ -d "$DS_DIR/data/chunk-000" ] && [ -n "$(ls -A $DS_DIR/data/chunk-000/ 2>/dev/null)" ]; then
     RESUME_FLAG="--resume=true"
     echo ">>> Dataset 已存在, append 模式"
 else
     RESUME_FLAG=""
-    # 清残骸顶层目录 (上次失败可能留下空骨架)
+    # Clean up debris in the top-level directory (previous failures may have left behind empty skeletons)
     if [ -d "$DS_DIR" ]; then
-        echo ">>> 清理残骸目录 $DS_DIR"
+        echo ">>> Clean up debris $DS_DIR"
         rm -rf "$DS_DIR"
     fi
-    echo ">>> Dataset 不存在, 新建模式"
+    echo ">>> Dataset does not exist; creating new mode."
 fi
 
 echo "============================================================"
-echo ">>> [Step 3/3] lerobot-record (录完按 → 结束)"
+echo ">>> [Step 3/3] lerobot-record"
 echo "============================================================"
 echo ""
 
@@ -65,4 +65,4 @@ HF_HOME=/home/ubuntu/techin517/huggingface lerobot-record \
   $RESUME_FLAG
 
 echo ""
-echo ">>> 完成"
+echo ">>> Finish"
