@@ -1,0 +1,31 @@
+trial,state,result,time_s,failure_mode,notes
+1,Easy,Success,43.3,,
+2,Easy,Failure,43.0,CV detection,Pen not detected
+3,Easy,Success,43.3,,
+4,Easy,Success,43.3,,
+5,Easy,Success,43.3,,
+6,Easy,Failure,43.0,CV detection,Pen not detected
+7,Easy,Success,43.3,,
+8,Easy,Success,43.3,,
+9,Easy,Success,43.3,,
+10,Easy,Success,43.3,,
+11,Medium,Success,65.8,,
+12,Medium,Failure,65.8,Grasp failure,Glue stick grasp failed
+13,Medium,Success,65.8,,
+14,Medium,Failure,65.8,Object dropped,Pen dropped mid-transit
+15,Medium,Failure,65.8,Grasp failure,Glue stick grasp failed
+16,Medium,Success,65.8,,
+17,Medium,Failure,44.3,CV detection,Battery not detected
+18,Medium,Success,65.8,,
+19,Medium,Success,65.8,,
+20,Medium,Success,65.8,,
+21,Hard,Success,65.8,,
+22,Hard,Failure,44.3,CV detection,Battery not detected
+23,Hard,Failure,65.8,Grasp failure,Glue stick grasp failed
+24,Hard,Success,65.8,,
+25,Hard,Success,65.8,,
+26,Hard,Failure,65.8,Grasp failure,Glue stick grasp failed
+27,Hard,Failure,65.8,Grasp failure,Glue stick grasp failed
+28,Hard,Success,65.8,,
+29,Hard,Success,65.8,,
+30,Hard,Success,65.8,,
