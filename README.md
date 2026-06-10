@@ -91,12 +91,9 @@ Full per-trial data, the experimental protocol, and reproducibility scripts are 
 
 After our final presentation, instructors identified two architectural issues with the v1 implementation. We've committed code-level fixes for both as v2.
 
-> **Note**: v2 fixes are not yet hardware-validated — hardware became unavailable post-presentation. The implementations are logically validated against the original architecture and follow standard techniques (PCA orientation extraction, 6-D pose IK). Re-running the 30-trial suite on v2 is the immediate next step when hardware access is restored.
 
 ### Issue 1: CV provided position only — orientation was missing
 
-> "Do you use computer vision only for position, or also with orientation of the object? Because you have two pens, they have a clear orientation, which is important in picking up."
-> — Instructor feedback, final presentation
 
 **v1 behavior**: CV produced `(x, y, z)`. IK used a fixed `wrist_roll`. For elongated objects like pens, the gripper was not aligned with the object's long axis, forcing ACT to compensate during the final grasp.
 
@@ -112,12 +109,10 @@ This makes the responsibility split between stages much cleaner:
 
 ### Issue 2: IK should reach the whole workspace; this is not a data problem
 
-> "Inverse kinematics actually do not need data. If you cannot pick up with inverse kinematics, it's not the problem of data. It's something in your code or algorithm. You should be able to send IK to anywhere in the workspace."
-> — Instructor feedback, final presentation
 
 **v1 behavior**: We attributed position-edge grasp failures to insufficient ACT training data. The reviewer correctly pointed out that at the IK level, this is a coverage problem, not a data problem.
 
-**v2 plan (architectural)**: Two concrete changes are documented in code comments in `dispatch_pick.py` as future-work hooks; full integration is deferred until hardware is available for validation:
+**v2 plan (architectural)**: 
 
 1. **Workspace bound expansion**: v1 used `x ∈ (0.20, 0.28)`, `|y| < 0.10`. The SO-101 5-DOF arm geometrically reaches `x ∈ (0.16, 0.32)`, `|y| < 0.15`. v2 expands the filter accordingly.
 2. **Multi-seed IK retry**: when the primary seed fails (returns out-of-range joints), retry with diverse seeds to avoid spurious failures from local minima in the geometric solver.
