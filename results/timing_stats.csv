@@ -1,0 +1,5 @@
+state,trials,successes,failures,success_rate_pct,mean_time_s,std_time_s,min_time_s,max_time_s
+Easy,10,8,2,80.0,43.3,0.0,43.3,43.3
+Medium,10,6,4,60.0,65.8,0.0,65.8,65.8
+Hard,10,6,4,60.0,65.8,0.0,65.8,65.8
+Overall,30,20,10,66.7,57.0,11.0,43.3,65.8
