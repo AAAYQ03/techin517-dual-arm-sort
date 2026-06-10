@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""
-dispatch_pick.py v2 - 分开 detect + 位置过滤
-
-修复 v1 的两个问题:
-  1. 混合 prompt "a battery. a usb stick." 下 DINO mis-classify
-     → 改成每个 prompt 单独 detect, 强制用 prompt 对应 label
-  2. DINO 把机械臂误识别为物体
-     → 加 base_link 位置过滤, 工作空间外的都丢
-"""
 
 import sys, os, time, math
 from types import SimpleNamespace
@@ -26,6 +17,7 @@ from lerobot.policies.factory import make_pre_post_processors, get_policy_class
 from lerobot.utils.control_utils import predict_action
 
 from cv_module import load_detector, detect_objects
+from cv_module.orientation import get_object_yaw_for_dispatch  # ← v2 NEW
 from clip_classifier import ClipClassifier
 from lerobot_kinematics import lerobot_IK, get_robot
 
