@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLIP zero-shot 二次分类 - 区分 battery vs usb stick vs 机械臂"""
+"""CLIP zero-shot Secondary Classification"""
 import cv2, torch
 from transformers import CLIPModel, CLIPProcessor
 from PIL import Image
@@ -23,7 +23,7 @@ class ClipClassifier:
         print(f"[CLIP] Ready ({len(self.CLASSES)} classes)")
 
     def classify(self, image_bgr, bbox, pad=15):
-        """对 bbox crop 跑 CLIP. 返回 (label, confidence, all_scores)"""
+        """Run CLIP on the bbox crop. Return (label, confidence, all_scores)"""
         H, W = image_bgr.shape[:2]
         x1, y1, x2, y2 = [int(v) for v in bbox]
         cx1, cy1 = max(0, x1-pad), max(0, y1-pad)
