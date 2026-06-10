@@ -1,27 +1,27 @@
 # cv_module.py
 """
-CV 检测模块 - 基于 Grounding DINO + RealSense 深度
+CV detection module - based on Grounding DINO + RealSense depth.
 
-主要导出:
+Main exports:
     load_detector(device='cuda', model_name='IDEA-Research/grounding-dino-base')
-        加载模型,返回 (processor, model)
+        Load the model and return (processor, model).
     
     detect_objects(color_image, depth_image, intrin, depth_scale,
                    processor, model, text_prompt, target_classes,
                    box_threshold=0.25, text_threshold=0.20, nms_iou=0.5,
                    device='cuda')
-        对一帧图像做物体检测,返回检测结果列表
+        Run object detection on a single frame; returns a list of detection results.
         
-    Detection 数据结构:
+    Detection data structure:
         {
-            "label": str,                  # 规范化后的类别名
-            "raw_label": str,              # 模型原始输出
-            "score": float,                # 置信度
-            "is_target": bool,             # 是否在 target_classes 里
-            "bbox_xyxy": (x1,y1,x2,y2),    # 检测框,像素
-            "pixel_center": (cx, cy),      # 中心像素
-            "cam_xyz_m": (X, Y, Z),        # 相机坐标系下 3D 点,米
-            "depth_valid": bool,           # 深度查询是否有效
+            "label": str,                  # Normalized class name
+            "raw_label": str,              # Raw model output
+            "score": float,                # Confidence
+            "is_target": bool,             # Whether it is in target_classes
+            "bbox_xyxy": (x1,y1,x2,y2),    # Detection box, pixels
+            "pixel_center": (cx, cy),      # Center pixel
+            "cam_xyz_m": (X, Y, Z),        # 3D point in camera frame, meters
+            "depth_valid": bool,           # Whether depth lookup succeeded
         }
 """
 
@@ -33,33 +33,35 @@ from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
 
 
 def load_detector(device="cuda", model_name="IDEA-Research/grounding-dino-base"):
-    """加载 Grounding DINO 模型"""
-    print(f"[cv_module] 加载 {model_name} 到 {device}...")
+    """Load the Grounding DINO model."""
+    print(f"[cv_module] Loading {model_name} on {device}...")
     processor = AutoProcessor.from_pretrained(model_name)
     model = AutoModelForZeroShotObjectDetection.from_pretrained(model_name).to(device)
     model.eval()
-    print(f"[cv_module] ✓ 模型已就绪")
+    print(f"[cv_module] ✓ Model ready")
     return processor, model
 
 
 def _query_depth(depth_image, cx, cy, depth_scale, patch=2, bbox=None):
-    """在 (cx,cy) 周围方窗取深度中位数; 若提供 bbox 则用 bbox 内全部有效深度.
-    单位米. 对细长/黑色物体 (pen) 更稳定."""
+    """Take the median depth from a square window around (cx, cy);
+    if bbox is provided, use all valid depth values inside the bbox.
+    Units in meters. More stable for thin/dark objects (pen)."""
     h, w = depth_image.shape
     if bbox is not None:
-        # 用 bbox 内全部有效深度的中位数 (对 pen 这种细长黑色物体更稳定)
+        # Use the median of all valid depth values inside the bbox
+        # (more stable for thin dark objects like pens).
         x1b, y1b, x2b, y2b = bbox
         x1b, y1b = max(0, int(x1b)), max(0, int(y1b))
         x2b, y2b = min(w, int(x2b)), min(h, int(y2b))
         if x2b <= x1b or y2b <= y1b:
-            # bbox 无效, 退回到中心 patch
+            # bbox invalid, fall back to center patch
             pass
         else:
             region = depth_image[y1b:y2b, x1b:x2b]
             valid = region[region > 0]
-            if len(valid) > 5:  # 至少 5 个有效点
+            if len(valid) > 5:  # at least 5 valid points
                 return float(np.median(valid)) * depth_scale, True
-    # 默认: 中心 patch
+    # Default: center patch
     y1, y2 = max(0, cy - patch), min(h, cy + patch + 1)
     x1, x2 = max(0, cx - patch), min(w, cx + patch + 1)
     region = depth_image[y1:y2, x1:x2]
@@ -70,7 +72,7 @@ def _query_depth(depth_image, cx, cy, depth_scale, patch=2, bbox=None):
 
 
 def _pixel_to_cam(cx, cy, z_m, intrin):
-    """像素 + 深度 -> 相机坐标系 3D 点(米)"""
+    """Pixel + depth -> 3D point in camera frame (meters)."""
     X = (cx - intrin.ppx) * z_m / intrin.fx
     Y = (cy - intrin.ppy) * z_m / intrin.fy
     Z = z_m
@@ -79,10 +81,11 @@ def _pixel_to_cam(cx, cy, z_m, intrin):
 
 def _normalize_label(raw_label, target_classes):
     """
-    规范化标签:
-    - 如果 raw_label 包含任一 target 类别词作为子串,返回最长的那个匹配
-    - 否则返回 raw_label 本身
-    返回: (normalized_label, is_target)
+    Normalize the label:
+    - If raw_label contains any target class word as a substring,
+      return the longest matching one.
+    - Otherwise return raw_label itself.
+    Returns: (normalized_label, is_target)
     """
     matched = [t for t in target_classes if t in raw_label]
     if matched:
@@ -91,7 +94,7 @@ def _normalize_label(raw_label, target_classes):
 
 
 def _nms(boxes, scores, labels, score_threshold, iou_threshold):
-    """对检测结果做 NMS 去重"""
+    """Apply NMS to deduplicate detection results."""
     if len(boxes) == 0:
         return [], [], []
     boxes_xywh = [[int(x1), int(y1), int(x2 - x1), int(y2 - y1)]
@@ -122,19 +125,19 @@ def detect_objects(
     device="cuda",
 ):
     """
-    主检测函数。输入一帧 RGB+Depth,返回所有检测结果。
+    Main detection function. Input a single RGB+Depth frame; returns all detections.
     
-    color_image: np.ndarray, BGR, 形状 (H, W, 3)
-    depth_image: np.ndarray, uint16, 形状 (H, W),单位由 depth_scale 决定
-    intrin:      pyrealsense2 内参对象,有 fx/fy/ppx/ppy 字段
-    depth_scale: float,depth_image * depth_scale = 米
-    processor, model: load_detector() 返回的两个对象
-    text_prompt: str,Grounding DINO 风格,每类用 ". " 分隔
-    target_classes: set[str],目标类别词(将作为子串匹配 raw_label)
+    color_image: np.ndarray, BGR, shape (H, W, 3)
+    depth_image: np.ndarray, uint16, shape (H, W); units determined by depth_scale
+    intrin:      pyrealsense2 intrinsics object, with fx/fy/ppx/ppy fields
+    depth_scale: float, depth_image * depth_scale = meters
+    processor, model: the two objects returned by load_detector()
+    text_prompt: str, Grounding DINO style, classes separated by ". "
+    target_classes: set[str], target class words (matched as substrings against raw_label)
     
-    返回: List[Detection dict],参见模块文档
+    Returns: List[Detection dict], see module docstring.
     """
-    # 1. 模型推理
+    # 1. Model inference
     rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
     pil = Image.fromarray(rgb)
     inputs = processor(images=pil, text=text_prompt, return_tensors="pt").to(device)
@@ -159,7 +162,7 @@ def detect_objects(
         score_threshold=box_threshold, iou_threshold=nms_iou
     )
     
-    # 3. 组装输出
+    # 3. Assemble outputs
     detections = []
     for box, score, raw_label in zip(boxes, scores, raw_labels):
         x1, y1, x2, y2 = box.astype(int)
@@ -183,7 +186,7 @@ def detect_objects(
 
 
 def draw_detections(image, detections):
-    """在图像上画出检测结果(返回新图像,不修改原图)"""
+    """Draw detection results on the image (returns a new image; does not modify the original)."""
     out = image.copy()
     for det in detections:
         x1, y1, x2, y2 = det["bbox_xyxy"]
