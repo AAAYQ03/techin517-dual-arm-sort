@@ -60,7 +60,7 @@ GRIPPER_CLOSED = 0.7
 BOX_SAME_F8  = (0.155, +0.058, 0.10)   # f8 same-side (left) bin (electronics: battery, earbuds)
 BOX_CROSS_F8 = (0.210, +0.160, 0.12)   # f8 cross-side (right) bin (stationery: pen, glue)
 
-# === Item configurations (f8 handles 3 items; glue is f7-only) ===
+# === All item configurations (4 items) ===
 ALL_ITEMS = {
     "battery": {
         "name": "battery",
