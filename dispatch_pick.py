@@ -131,21 +131,56 @@ def cam_xyz_to_base(cam_xyz):
     return (float(pb[0] - 0.030), float(-pb[1] + 0.020), float(pb[2]))
 
 
-def base_xyz_to_arm_joints(x, y, z, seed_qpos):
+def base_xyz_yaw_to_arm_joints(x, y, z, yaw_rad, seed_qpos):
+    """
+    v2 IK: solve for given base_link position AND world yaw of the object.
+
+    Args:
+        x, y, z   : target gripper position in base_link
+        yaw_rad   : desired gripper-aligned yaw in base_link [-pi/2, pi/2].
+                    Set to None to keep default wrist_roll (= v1 behavior).
+        seed_qpos : seed joint angles for IK
+
+    Returns:
+        (joints_dict, ok)
+    """
     shoulder_pan = math.atan2(y, x)
     horizontal = math.sqrt(x*x + y*y)
-    target_gpos = np.array([horizontal - URDF_TO_LEROBOT_DX, 0.0, z - URDF_TO_LEROBOT_DZ,
-                            LEROBOT_ROLL, LEROBOT_PITCH, 0.0])
-    qpos_inv, ok = lerobot_IK(seed_qpos, target_gpos, robot=get_robot('so101'))
+    target_gpos = np.array([
+        horizontal - URDF_TO_LEROBOT_DX, 0.0, z - URDF_TO_LEROBOT_DZ,
+        LEROBOT_ROLL, LEROBOT_PITCH, 0.0,
+    ])
+    qpos_inv, ok = lerobot_IK(seed_qpos, target_gpos, robot=robot)
     if not ok:
         return None, False
+
+    # ===== v2: override wrist_roll using object orientation =====
+    if yaw_rad is not None:
+        # Gripper should close perpendicular to the object's long axis.
+        # Subtract shoulder_pan because wrist_roll is measured relative
+        # to the arm's local frame, not base_link.
+        wrist_roll = (yaw_rad - shoulder_pan) + math.pi / 2.0
+        # Wrap to [-pi, pi]
+        while wrist_roll > math.pi:
+            wrist_roll -= 2.0 * math.pi
+        while wrist_roll < -math.pi:
+            wrist_roll += 2.0 * math.pi
+    else:
+        wrist_roll = qpos_inv[3]
+    # ===== /v2 =====
+
     return {
-        "shoulder_pan":  float(shoulder_pan),
-        "shoulder_lift": float(qpos_inv[0]),
-        "elbow_flex":    float(qpos_inv[1]),
-        "wrist_flex":    float(qpos_inv[2]),
-        "wrist_roll":    float(qpos_inv[3]),
+        "shoulder_pan": shoulder_pan,
+        "shoulder_lift": qpos_inv[0],
+        "elbow_flex": qpos_inv[1],
+        "wrist_flex": qpos_inv[2],
+        "wrist_roll": wrist_roll,
     }, True
+
+
+def base_xyz_to_arm_joints(x, y, z, seed_qpos):
+    """v1 API (kept for backward compat). Calls v2 with yaw=None."""
+    return base_xyz_yaw_to_arm_joints(x, y, z, None, seed_qpos)
 
 
 def ramp_to(follower, target_deg, duration_s=3.0, hz=30, label=""):
@@ -321,6 +356,12 @@ def redetect_single_item(top, processor_cv, model_cv, item_cfg):
             continue
         d['item_config'] = item_cfg
         d['box_xyz'] = get_box_for_item(item_cfg)
+        # ===== v2 NEW: extract object orientation =====
+        yaw_rad = get_object_yaw_for_dispatch(bgr, d['bbox_xyxy'], item_cfg['name'])
+        if yaw_rad is not None:
+            print(f"    [orientation] {item_cfg['name']}: yaw={math.degrees(yaw_rad):.1f} deg")
+        d['yaw_rad'] = yaw_rad
+        # ===== /v2 =====
         print(f"    [Re-detect ACCEPT] score={d.get('score',0):.2f} base_xyz={base_xyz}")
         return d  # 返回第一个有效
 
@@ -384,6 +425,12 @@ def detect_all_objects(top, processor_cv, model_cv, clip_clf, items_to_detect=No
                 continue
             d['item_config'] = item_cfg
             d['box_xyz'] = get_box_for_item(item_cfg)
+            # ===== v2 NEW: extract object orientation =====
+            yaw_rad = get_object_yaw_for_dispatch(bgr, d['bbox_xyxy'], item_name)
+            if yaw_rad is not None:
+                print(f"    [orientation] {item_name}: yaw={math.degrees(yaw_rad):.1f} deg")
+            d['yaw_rad'] = yaw_rad
+            # ===== /v2 =====
             bb = tuple(int(x) for x in d['bbox_xyxy'])
             print(f"    [ACCEPT] {item_cfg['name']} bbox={bb} score={d['score']:.2f} base_xyz={base_xyz}")
             all_detections.append(d)
@@ -488,7 +535,11 @@ def main():
             z_above = base_xyz[2] + APPROACH_HEIGHT
             seed = np.array([SAFE_HOME_RAD["shoulder_lift"], SAFE_HOME_RAD["elbow_flex"],
                              SAFE_HOME_RAD["wrist_flex"], SAFE_HOME_RAD["wrist_roll"]])
-            joints_rad, ok = base_xyz_to_arm_joints(base_xyz[0], base_xyz[1], z_above, seed)
+            # ===== v2 NEW: pass object yaw to IK =====
+            yaw_rad = det.get('yaw_rad')   # None for symmetric objects
+            joints_rad, ok = base_xyz_yaw_to_arm_joints(
+                base_xyz[0], base_xyz[1], z_above, yaw_rad, seed)
+            # ===== /v2 =====
             if not ok:
                 print(f"  ✗ IK fail, skipping")
                 continue
