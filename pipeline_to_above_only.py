@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-pipeline_to_above_only.py - v0.7 派生的简化版
-用途：方案 A 重录数据的"起点定位器"
-  CV → IK → MoveIt 送到 above → 打印 follower 当前关节角 → 退出
-退出后：ROS launch 还在跑，follower servo 保持在 above 位置；
-        然后人眼摆 leader 对齐，再杀 ROS 跑 lerobot-record
+pipeline_to_above_only.py - Simplified version derived from v0.7
+Purpose: "Start-point locator" for re-recording data (Scheme A)
+CV → IK → MoveIt moves to 'above' position → Prints follower's current joint angles → Exits
+After exit: ROS launch remains running, and the follower servo holds the 'above' position;
+then, manually align the leader, kill the ROS process, and run lerobot-record.
 """
 
 import sys
@@ -43,7 +43,6 @@ TOPIC_CAMINFO = "/static_camera/overhead_cam/color/camera_info"
 TARGET_FRAME = "base_link"
 SOURCE_FRAME = "overhead_camoverhead_cam_color_optical_frame"
 
-# 物体相关——录别的物体时改这里
 TEXT_PROMPT    = "a rounded white case."
 TARGET_CLASSES = {"case", "rounded white case"}
 BOX_THRESHOLD  = 0.20
@@ -61,14 +60,14 @@ JOINT_NAMES = ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wri
 
 
 def is_valid_position(base_xyz):
-    """工作空间过滤: 滤掉机械臂误识别 (跟 dispatch_pick_f7.py 一致)"""
+    """Workspace filtering: Filter out misidentifications by the robotic arm (consistent with dispatch_pick_f7.py)."""
     x, y, z = base_xyz
     return (0.18 < x < 0.30) and (abs(y) < 0.12) and (-0.02 < z < 0.06)
 
 URDF_TO_LEROBOT_DX = 0.030
 URDF_TO_LEROBOT_DZ = 0.056
 LEROBOT_ROLL  = 0.147
-LEROBOT_PITCH = 1.30   # 注意：与 5.13 总结里的 1.134 不一致，跟现版 v0.7 保持一致
+LEROBOT_PITCH = 1.30   
 
 ARM_GROUP       = "arm"
 GRIPPER_OPEN    = 1.7
@@ -216,7 +215,7 @@ class PipelineToAboveOnly(Node):
             return None
         targets.sort(key=lambda d: d["score"], reverse=True)
 
-        # 工作空间过滤: 转 base_link 看是否合法, 不合法跳到下一个 (滤掉机械臂误识别)
+        # Workspace filtering: Transform to `base_link` to check for validity; if invalid, skip to the next one (filters out misidentified robotic arm components).
         stamp = self.top_color_msg.header.stamp
         for t in targets:
             base_xyz = self.cam_to_base(t["cam_xyz_m"], stamp)
@@ -261,8 +260,8 @@ class PipelineToAboveOnly(Node):
         return self.send_joint_goal_moveit(joint_dict, "above", 0.05)
 
     def report_current_joints(self):
-        """打印 follower 当前关节角，方便人眼摆 leader"""
-        # 多吃几次 spin 确保 joint_state 是最新的
+        """Print the current joint angles of the follower to make it easier for a human operator to manually position the leader."""
+        
         for _ in range(20):
             rclpy.spin_once(self, timeout_sec=0.05)
         if self.joint_state_msg is None:
@@ -270,7 +269,7 @@ class PipelineToAboveOnly(Node):
             return
         m = dict(zip(self.joint_state_msg.name, self.joint_state_msg.position))
         print("\n" + "="*60)
-        print("FOLLOWER 当前关节角 (摆 leader 时参照):")
+        print("FOLLOWER Current Joint Angle (reference when swinging the leader):")
         print("="*60)
         for n in JOINT_NAMES:
             if n in m:
@@ -304,7 +303,7 @@ class PipelineToAboveOnly(Node):
         if not self.go_above(base_xyz):
             self.get_logger().error("go_above failed.")
             return False
-        # 等机械臂到位 + servo 锁定
+        # Wait for robotic arm to reach position + servo lock
         self.warmup(1.5)
         self.report_current_joints()
         self.get_logger().info("=== DONE (follower 停在 above；ACT 阶段跳过) ===")
