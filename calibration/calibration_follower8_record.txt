@@ -1,0 +1,33 @@
+=== follower8 calibration (FINAL, used in deployment) ===
+
+Source: 5/10 PDF (Variant 1 correct transform)
+
+Original calibration (base → color_optical_frame, "中间数据"):
+  translation: [0.0204, -0.1066, 0.3383]
+  rotation (xyzw): [-0.6185, 0.6737, -0.2659, 0.3049]
+
+Variant 1 transform → base_link → overhead_cam_link (写入 launch):
+  translation: [0.0198, -0.1215, 0.3372]
+  rotation (xyzw): [0.0419, 0.3597, -0.0051, 0.9321]
+
+Static transform parameters:
+  --x  0.0198
+  --y -0.1215
+  --z  0.3372
+  --qx 0.0419
+  --qy 0.3597
+  --qz -0.0051
+  --qw 0.9321
+  --frame-id base_link
+  --child-frame-id overhead_camoverhead_cam_overhead_cam_link
+
+Notes:
+  - 5/4 originally calibrated, but Day 1 used WRONG variant ([-0.0780, 0.2623, 0.2256])
+  - 5/10 Day 9 brute-forced 4 variants, Variant 1 is physically correct
+  - follower8 v2 数据采集和 deploy 用的就是这套标定
+  - NOTE: This value is NOT in any .bak file (5/10 没 cp 备份)
+    PDF + this txt file are the only sources
+
+If restoring for future follower8 use:
+  - Use Variant 1 values above
+  - Do NOT use .bak.2132 (contains wrong Day 1 calibration)

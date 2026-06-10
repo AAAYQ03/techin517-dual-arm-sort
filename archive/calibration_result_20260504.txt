@@ -1,0 +1,2 @@
+# 已废弃 - 早期 follower8 标定原始 dump，已应用到 launch
+# 生效的标定记录在 calibration/ 目录中
