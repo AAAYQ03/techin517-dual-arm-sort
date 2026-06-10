@@ -87,6 +87,39 @@ Full per-trial data, the experimental protocol, and reproducibility scripts are 
 
 ---
 
+## Generalization Tests
+
+The 30 main trials reported above were run under controlled conditions (standard overhead lighting, clean table, calibrated bin positions). We also tested two auxiliary conditions to probe how the system generalizes to environmental variation.
+
+### Lighting variation
+
+| Condition | Easy | Medium / Hard | Observation |
+|---|---|---|---|
+| **Standard lighting** (baseline) | 80 % | 60 % / 60 % | Reported above |
+| **Strong lighting** | comparable | comparable | No observable change in any metric |
+| **Dim lighting** | comparable | **degraded** | New failure mode emerges in cross-side delivery |
+
+**Root-cause analysis of the dim-light Medium / Hard failure**:
+
+Under dim lighting, the Grounding DINO bounding boxes for the destination bins are visibly blurrier and slightly larger than under standard lighting. The bin Z (height) is sampled as the median depth over the bbox region, so an inflated bbox now includes a small fraction of table-surface pixels in the depth median — biasing the sampled depth toward the table (lower Z than the true bin rim). The delivery IK target ends up slightly below the rim, and the object is released too low; it tips out of the bin during the final retract.
+
+This failure mode does not appear in Easy because Easy uses same-side delivery only, which goes to calibrated bin positions rather than CV-detected ones.
+
+### Distractor robustness
+
+The Hard state intentionally adds 2 visual distractors (keys, coins) to the scene. The CV pipeline (per-object DINO prompts + color prior + shape prior + CLIP classifier) rejects all distractors across all 10 Hard trials — Hard's 60 % success rate equals Medium's because distractor rejection is essentially free at the CV stage. The dominant failure mode (glue stick grasp) is not affected by distractor presence.
+
+### Untested generalization axes
+
+The following were not formally evaluated and are listed for transparency:
+
+- **Novel objects**: only the 4 trained classes were tested. The CV stage would plausibly detect similar items via open-vocab prompting, but ACT grasp policies are object-specific and would not transfer without retraining.
+- **Different table geometries / heights**: hand-eye calibration and IK workspace bounds assume our specific table.
+- **Different bin positions**: bin coordinates are hardcoded in the dispatcher; moving the bins requires updating those constants.
+
+
+---
+
 ## Lessons Learned: v1 → v2 Improvements
 
 After our final presentation, instructors identified two architectural issues with the v1 implementation. We've committed code-level fixes for both as v2.
