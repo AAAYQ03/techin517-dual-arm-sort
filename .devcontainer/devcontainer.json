@@ -1,37 +1,39 @@
 {
-  "name": "techin517",
+  "name": "Bi-Arm SO-101 Sorting",
   "build": {
     "dockerfile": "../docker/Dockerfile",
-    "target": "dev"
+    "context": ".."
   },
   "runArgs": [
-    "--privileged",
-    "--network=host",
-    "--gpus", "all",
-    "-e", "DISPLAY=${localEnv:DISPLAY}",
-    "-e", "NVIDIA_DRIVER_CAPABILITIES=all",
-    "-e", "WGPU_BACKEND=gl",
-    "-e", "LIBUSB_DEBUG=3"
+    "--gpus=all",
+    "--ipc=host",
+    "--ulimit=memlock=-1",
+    "--privileged"
   ],
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/ubuntu/techin517,type=bind",
-  "workspaceFolder": "/home/ubuntu/techin517",
   "mounts": [
-    "source=/etc/timezone,target=/etc/timezone,type=bind",
-    "source=/etc/localtime,target=/etc/localtime,type=bind",
-    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
     "source=/dev,target=/dev,type=bind",
-    "source=/etc/udev,target=/etc/udev,type=bind",
-    "source=/run/udev,target=/run/udev,type=bind,readonly",
-    "source=${localWorkspaceFolder}/docker/bash_history.txt,target=/home/ubuntu/.bash_history,type=bind",
+    "source=${localEnv:HOME}/.cache/huggingface,target=/home/ubuntu/huggingface,type=bind,consistency=cached"
   ],
-  "postStartCommand": "bash -lc '/home/ubuntu/techin517/docker/setup.sh'",
+  "remoteUser": "ubuntu",
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "HF_HOME": "/home/ubuntu/huggingface",
+    "PYTHONPATH": "/workspaces/techin517-dual-arm-sort"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-toolsai.jupyter"
-      ]
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/conda/bin/python",
+        "editor.formatOnSave": false
+      }
     }
-  }
+  },
+  "postCreateCommand": "python3 -c 'import torch; print(f\"PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}\")' || echo 'Some imports may need manual install'"
 }
 
